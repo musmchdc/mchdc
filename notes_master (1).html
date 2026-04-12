@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consultation des notes – MUS MCHDC (S1)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f5f5f5; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+  .card { background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 100%; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .logo { text-align: center; margin-bottom: 1.5rem; }
+  .logo h1 { font-size: 20px; color: #1a1a2e; font-weight: 700; }
+  .logo p { font-size: 13px; color: #666; margin-top: 4px; }
+  .badge { display: inline-block; background: #e8f0fe; color: #1a56db; font-size: 12px; padding: 4px 12px; border-radius: 20px; margin-top: 6px; }
+  label { display: block; font-size: 14px; font-weight: 600; color: #333; margin-bottom: 6px; }
+  input { width: 100%; padding: 12px 14px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 15px; outline: none; transition: border 0.2s; }
+  input:focus { border-color: #1a56db; }
+  button { width: 100%; margin-top: 12px; padding: 13px; background: #1a56db; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+  button:hover { background: #1447c0; }
+  button:disabled { background: #aaa; cursor: not-allowed; }
+  .result { margin-top: 1.5rem; }
+  .student-name { font-size: 17px; font-weight: 700; color: #1a1a2e; margin-bottom: 1rem; padding-bottom: 10px; border-bottom: 1.5px solid #eee; }
+  .module { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 0.5px solid #f0f0f0; }
+  .module-name { font-size: 14px; color: #444; }
+  .note { font-size: 15px; font-weight: 700; color: #1a56db; background: #e8f0fe; padding: 4px 12px; border-radius: 20px; }
+  .note.high { color: #0f7b3f; background: #e6f4ea; }
+  .note.low { color: #c0392b; background: #fdecea; }
+  .error { background: #fdecea; color: #c0392b; padding: 12px; border-radius: 8px; font-size: 14px; text-align: center; margin-top: 1rem; }
+  .loading { text-align: center; color: #666; font-size: 14px; margin-top: 1rem; }
+  .univ { text-align: center; font-size: 12px; color: #999; margin-top: 1.5rem; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <h1>Consultation des notes</h1>
+    <p>Université Ibn Tofail – Kénitra</p>
+    <span class="badge">MUS MCHDC – Semestre 1</span>
+  </div>
+
+  <label for="apogee">Votre numéro Apogée</label>
+  <input type="text" id="apogee" placeholder="Ex: 24020000" maxlength="20" />
+  <button onclick="consulter()" id="btn">Consulter mes notes</button>
+
+  <div id="output"></div>
+
+  <p class="univ">Faculté d'économie et de gestion</p>
+</div>
+
+<script>
+const API = "https://script.google.com/macros/s/AKfycbxSSUwYy0Jx2t-UDzQGElFKUg-jABJFTx2P_wz2d7GIXo55Dx-aIj_iyeNicUoVu4e5Tw/exec";
+
+function consulter() {
+  var apogee = document.getElementById("apogee").value.trim();
+  if (!apogee) { alert("Veuillez entrer votre numéro Apogée."); return; }
+
+  var btn = document.getElementById("btn");
+  btn.disabled = true;
+  btn.textContent = "Chargement...";
+  document.getElementById("output").innerHTML = '<p class="loading">Recherche en cours...</p>';
+
+  fetch(API + "?apogee=" + encodeURIComponent(apogee))
+    .then(function(r) { return r.text(); })
+    .then(function(text) {
+      btn.disabled = false;
+      btn.textContent = "Consulter mes notes";
+      if (text.includes("Introuvable")) {
+        document.getElementById("output").innerHTML = '<div class="error">Numéro Apogée introuvable. Vérifiez et réessayez.</div>';
+        return;
+      }
+      var lines = text.trim().split("\n");
+      var html = '<div class="result">';
+      html += '<div class="student-name">' + lines[0].replace("Etudiant: ", "") + '</div>';
+      for (var i = 1; i < lines.length; i++) {
+        if (!lines[i]) continue;
+        var parts = lines[i].split(": ");
+        if (parts.length < 2) continue;
+        var module = parts[0];
+        var note = parseFloat(parts[1]);
+        var cls = note >= 16 ? "high" : note < 12 ? "low" : "";
+        html += '<div class="module"><span class="module-name">' + module + '</span><span class="note ' + cls + '">' + note + '/20</span></div>';
+      }
+      html += '</div>';
+      document.getElementById("output").innerHTML = html;
+    })
+    .catch(function() {
+      btn.disabled = false;
+      btn.textContent = "Consulter mes notes";
+      document.getElementById("output").innerHTML = '<div class="error">Erreur de connexion. Réessayez.</div>';
+    });
+}
+
+document.getElementById("apogee").addEventListener("keypress", function(e) {
+  if (e.key === "Enter") consulter();
+});
+</script>
+</body>
+</html>
