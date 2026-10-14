@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consultation des notes – MUS MCHDC (S2)</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .logo h1 {
+      font-size: 20px;
+      color: #1a1a2e;
+      font-weight: 700;
+    }
+
+    .logo p {
+      font-size: 13px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #e8f0fe;
+      color: #1a56db;
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-top: 6px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #1a56db;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 12px;
+      padding: 13px;
+      background: #1a56db;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1447c0;
+    }
+
+    button:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+
+    .result {
+      margin-top: 1.5rem;
+    }
+
+    .student-name {
+      font-size: 17px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 1rem;
+      padding-bottom: 10px;
+      border-bottom: 1.5px solid #eee;
+      overflow-wrap: anywhere;
+    }
+
+    .module,
+    .moyenne {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+    }
+
+    .module {
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .module-name {
+      font-size: 14px;
+      color: #444;
+      overflow-wrap: anywhere;
+    }
+
+    .note {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1a56db;
+      background: #e8f0fe;
+      padding: 4px 12px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .note.high {
+      color: #0f7b3f;
+      background: #e6f4ea;
+    }
+
+    .note.low {
+      color: #c0392b;
+      background: #fdecea;
+    }
+
+    .moyenne {
+      padding: 12px 0;
+      margin-top: 6px;
+      border-top: 2px solid #1a56db;
+    }
+
+    .moyenne-label {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+
+    .moyenne-note {
+      font-size: 16px;
+      font-weight: 700;
+      color: white;
+      background: #1a56db;
+      padding: 5px 14px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .error {
+      background: #fdecea;
+      color: #c0392b;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .loading {
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+      margin-top: 1rem;
+    }
+
+    .univ {
+      text-align: center;
+      font-size: 12px;
+      color: #999;
+      margin-top: 1.5rem;
+    }
+
+    @media (max-width: 480px) {
+      .card {
+        padding: 1.5rem 1rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="card">
+    <div class="logo">
+      <h1>Consultation des notes</h1>
+      <p>Université Ibn Tofail – Kénitra</p>
+      <span class="badge">MUS MCHDC – Semestre 2</span>
+    </div>
+
+    <form id="notes-form">
+      <label for="apogee">Votre numéro Apogée</label>
+
+      <input
+        type="text"
+        id="apogee"
+        placeholder="Ex. : 24020000"
+        maxlength="20"
+        inputmode="numeric"
+        pattern="[0-9]+"
+        autocomplete="off"
+        required
+      >
+
+      <button type="submit" id="btn">
+        Consulter mes notes
+      </button>
+    </form>
+
+    <div id="output" aria-live="polite" aria-atomic="true"></div>
+
+    <p class="univ">Faculté d’économie et de gestion</p>
+  </main>
+
+  <script>
+    "use strict";
+
+    const API =
+      "https://script.google.com/macros/s/AKfycbyxi86AomTXgSKDAiOR5iUYOyIO4KQgltU0Zz4GfMihDMsyE8lKft7stN0wSW_1XG6IKA/exec";
+
+    const form = document.getElementById("notes-form");
+    const input = document.getElementById("apogee");
+    const btn = document.getElementById("btn");
+    const output = document.getElementById("output");
+
+    function creerElement(tag, classe, texte) {
+      const element = document.createElement(tag);
+
+      if (classe) {
+        element.className = classe;
+      }
+
+      if (texte !== undefined) {
+        element.textContent = texte;
+      }
+
+      return element;
+    }
+
+    function afficherMessage(texte, classe) {
+      output.replaceChildren(
+        creerElement("div", classe, texte)
+      );
+    }
+
+    function lireNote(valeur) {
+      // Accepte notamment "14", "14.5", "14,5" et "14,5/20".
+      const texte = valeur
+        .replace(/\/\s*20\s*$/, "")
+        .trim();
+
+      const nombreTexte = texte.replace(",", ".");
+
+      const estNumerique =
+        /^[+-]?\d+(?:\.\d+)?$/.test(nombreTexte);
+
+      const nombre = estNumerique
+        ? Number(nombreTexte)
+        : NaN;
+
+      return {
+        nombre: nombre,
+        affichage: Number.isFinite(nombre)
+          ? nombre.toLocaleString("fr-FR", {
+              maximumFractionDigits: 2
+            }) + "/20"
+          : texte || "Non disponible"
+      };
+    }
+
+    function afficherResultats(texte) {
+      const lignes = texte
+        .trim()
+        .split(/\r?\n/)
+        .map(function(ligne) {
+          return ligne.trim();
+        })
+        .filter(Boolean);
+
+      if (
+        lignes.length === 1 &&
+        /^introuvable[.!]?$/i.test(lignes[0])
+      ) {
+        afficherMessage(
+          "Numéro Apogée introuvable. Vérifiez et réessayez.",
+          "error"
+        );
+        return;
+      }
+
+      // Vérifie que la réponse correspond au format de Code.gs.
+      if (
+        !lignes.length ||
+        !/^Etudiant\s*:/i.test(lignes[0])
+      ) {
+        throw new Error(
+          "Réponse inattendue : vérifiez le code Apps Script " +
+          "et les paramètres de son déploiement."
+        );
+      }
+
+      const resultat = creerElement("div", "result");
+
+      const nom = lignes[0]
+        .replace(/^Etudiant\s*:\s*/i, "")
+        .trim();
+
+      resultat.appendChild(
+        creerElement(
+          "div",
+          "student-name",
+          nom || "Étudiant"
+        )
+      );
+
+      for (let i = 1; i < lignes.length; i++) {
+        const position = lignes[i].indexOf(":");
+
+        if (position === -1) {
+          continue;
+        }
+
+        const module = lignes[i]
+          .slice(0, position)
+          .trim();
+
+        const valeur = lignes[i]
+          .slice(position + 1)
+          .trim();
+
+        if (!module) {
+          continue;
+        }
+
+        const note = lireNote(valeur);
+
+        const nomNormalise = module
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase();
+
+        if (nomNormalise === "moyenne generale") {
+          const ligne = creerElement("div", "moyenne");
+
+          ligne.append(
+            creerElement(
+              "span",
+              "moyenne-label",
+              "Moyenne générale"
+            ),
+            creerElement(
+              "span",
+              "moyenne-note",
+              note.affichage
+            )
+          );
+
+          resultat.appendChild(ligne);
+        } else {
+          let classe = "note";
+
+          if (Number.isFinite(note.nombre)) {
+            if (note.nombre >= 16) {
+              classe += " high";
+            } else if (note.nombre < 12) {
+              classe += " low";
+            }
+          }
+
+          const ligne = creerElement("div", "module");
+
+          ligne.append(
+            creerElement(
+              "span",
+              "module-name",
+              module
+            ),
+            creerElement(
+              "span",
+              classe,
+              note.affichage
+            )
+          );
+
+          resultat.appendChild(ligne);
+        }
+      }
+
+      output.replaceChildren(resultat);
+    }
+
+    async function consulter() {
+      if (btn.disabled) {
+        return;
+      }
+
+      const apogee = input.value.trim();
+
+      if (!/^\d{1,20}$/.test(apogee)) {
+        afficherMessage(
+          "Veuillez saisir un numéro Apogée composé uniquement de chiffres.",
+          "error"
+        );
+        input.focus();
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Chargement...";
+      output.setAttribute("aria-busy", "true");
+
+      afficherMessage(
+        "Recherche en cours…",
+        "loading"
+      );
+
+      const controleur = new AbortController();
+
+      const delai = setTimeout(function() {
+        controleur.abort();
+      }, 30000);
+
+      try {
+        const url = new URL(API);
+        url.searchParams.set("apogee", apogee);
+
+        const reponse = await fetch(url.toString(), {
+          method: "GET",
+          signal: controleur.signal,
+          credentials: "omit",
+          cache: "no-store"
+        });
+
+        if (!reponse.ok) {
+          throw new Error(
+            "Le serveur a renvoyé une erreur HTTP " +
+            reponse.status + "."
+          );
+        }
+
+        const texte = await reponse.text();
+
+        afficherResultats(texte);
+      } catch (erreur) {
+        console.error(
+          "Erreur lors de la consultation des notes :",
+          erreur
+        );
+
+        let message;
+
+        if (erreur.name === "AbortError") {
+          message =
+            "Le serveur met trop de temps à répondre. Réessayez.";
+        } else if (erreur instanceof TypeError) {
+          message =
+            "Impossible de joindre le service des notes. " +
+            "Réessayez dans quelques instants.";
+        } else {
+          message = erreur.message;
+        }
+
+        afficherMessage(message, "error");
+      } finally {
+        clearTimeout(delai);
+        btn.disabled = false;
+        btn.textContent = "Consulter mes notes";
+        output.setAttribute("aria-busy", "false");
+      }
+    }
+
+    form.addEventListener("submit", function(evenement) {
+      evenement.preventDefault();
+      consulter();
+    });
+  </script>
+</body>
+</html>
