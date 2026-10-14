@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>Consultation des notes – MUS MCHDC S2</title>
 
   <style>
@@ -248,8 +247,8 @@
   <script>
     "use strict";
 
-    // Nouveau lien de votre application Web Google Apps Script.
-    const API = "https://script.google.com/macros/s/AKfycbxix-RfkPAxNRIAvuPnSkTT2Gsx01wr4ZWRAZPTEEAnyy__mBdSke_XwRtSg2cD5DMuXA/exec";
+    // Votre nouveau lien Google Apps Script.
+    const API = "https://script.google.com/macros/s/AKfycbzOAYPBQHD7ye7ZIgXemb2z3g4wZR0fuBfwdNWM_Thwvcl7Kq1yCFvXepcFDkdAJBFp/exec";
 
     const form = document.getElementById("notes-form");
     const input = document.getElementById("apogee");
@@ -283,10 +282,7 @@
 
       const nombreTexte = texte.replace(",", ".");
       const estNombre = /^\d+(?:\.\d+)?$/.test(nombreTexte);
-
-      const nombre = estNombre
-        ? Number(nombreTexte)
-        : NaN;
+      const nombre = estNombre ? Number(nombreTexte) : NaN;
 
       return {
         nombre: nombre,
@@ -324,7 +320,6 @@
         );
       }
 
-      // Affiche les messages d'erreur renvoyés par Code.gs.
       if (/^Erreur\b/i.test(lignes[0])) {
         throw new Error(lignes[0]);
       }
